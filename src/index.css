@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Lalezar', sans-serif;
+  direction: rtl;
+}
+
+.lalezar-regular {
+  font-family: "Lalezar", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 30 40% 98%;
+    --foreground: 20 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 15% 15%;
+
+    --primary: 160 60% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 35% 92%;
+    --secondary-foreground: 20 15% 15%;
+
+    --muted: 210 30% 94%;
+    --muted-foreground: 25 10% 50%;
+
+    --accent: 45 85% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 30 40% 98%;
+
+    --border: 30 25% 88%;
+    --input: 30 25% 88%;
+    --ring: 18 85% 45%;
+    
+    --spice-primary: 18 85% 45%;
+    --spice-secondary: 25 60% 35%;
+    --spice-accent: 42 95% 58%;
+    --spice-warm: 15 70% 55%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 20 25% 12%;
+    --foreground: 30 40% 98%;
+
+    --card: 20 25% 12%;
+    --card-foreground: 30 40% 98%;
+
+    --popover: 20 25% 12%;
+    --popover-foreground: 30 40% 98%;
+
+    --primary: 160 60% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 20%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 30% 20%;
+    --muted-foreground: 30 20% 65%;
+
+    --accent: 200 95% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 30 40% 98%;
+
+    --border: 25 30% 20%;
+    --input: 25 30% 20%;
+    --ring: 18 85% 55%;
+    
+    --spice-primary: 18 85% 55%;
+    --spice-secondary: 25 60% 45%;
+    --spice-accent: 42 95% 58%;
+    --spice-warm: 15 70% 60%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+/* Luxury Theme Styles */
+.bg-luxury-gradient {
+  background: linear-gradient(135deg, 
+    hsl(var(--background)) 0%, 
+    hsl(var(--muted)) 50%, 
+    hsl(var(--background)) 100%);
+}
+
+.text-luxury {
+  color: hsl(var(--foreground));
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-gold {
+  color: #D4AF37;
+}
+
+.text-gold-shimmer {
+  background: linear-gradient(45deg, #D4AF37, #FFD700, #D4AF37);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gold gradient and effects */
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+}
+
+.text-gold-foreground {
+  color: #1a1a1a;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 0 30px rgba(212, 175, 55, 0.4);
+  }
+}
+
+/* Animation for success page */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
