@@ -138,10 +138,26 @@ const RecitationTest = () => {
     // Generate random surah within the part range
     const randomSurah = Math.floor(Math.random() * (partMapping.endSurah - partMapping.startSurah + 1)) + partMapping.startSurah;
     
-    // Get the actual verse count for this surah and generate a valid verse number
+    // Get the actual verse count for this surah
     const verseCount = surahVerseCounts[randomSurah] || 10;
-    const maxVerse = Math.min(verseCount, 50); // Limit to first 50 verses for better recitation positions
-    const randomVerse = Math.floor(Math.random() * maxVerse) + 1;
+    
+    // Calculate minimum verses needed for recitation (at least 10 verses)
+    const minVersesForRecitation = 10;
+    
+    // Determine the maximum starting verse to ensure enough verses remain
+    let maxStartingVerse;
+    if (verseCount <= minVersesForRecitation) {
+      // For very short surahs, start from verse 1
+      maxStartingVerse = 1;
+    } else {
+      // For longer surahs, ensure at least 10 verses remain after starting point
+      maxStartingVerse = Math.max(1, verseCount - minVersesForRecitation);
+      // Also limit to reasonable starting positions (not beyond 80% of surah)
+      maxStartingVerse = Math.min(maxStartingVerse, Math.floor(verseCount * 0.8));
+    }
+    
+    // Generate random verse within the safe range
+    const randomVerse = Math.floor(Math.random() * maxStartingVerse) + 1;
     
     return { surah: randomSurah, verse: randomVerse };
   };
@@ -176,40 +192,45 @@ const RecitationTest = () => {
     setIsGenerating(true);
     
     try {
+      // Always ensure we have exactly 4 positions
       const newPositions: RecitationPosition[] = [];
       
       // Generate 4 random positions distributed across selected parts
-      const shuffledParts = [...selectedParts].sort(() => Math.random() - 0.5); // Shuffle the parts
+      const shuffledParts = [...selectedParts].sort(() => Math.random() - 0.5);
       
+      // Process all 4 positions sequentially to ensure they all complete
       for (let i = 0; i < 4; i++) {
-        // Distribute positions evenly across all selected parts
         const partNumber = shuffledParts[i % shuffledParts.length];
-        
-        // Generate random verse from this part
         const randomVerse = generateRandomVerseFromPart(partNumber);
         
         if (randomVerse) {
-          // Fetch the actual verse from API
-          const verseData = await fetchVerseFromAPI(randomVerse.surah, randomVerse.verse);
-          
-          if (verseData) {
-            // Get first 50 characters of the verse for description
-            const verseText = verseData.text;
-            const shortText = verseText.length > 50 ? verseText.substring(0, 50) + "..." : verseText;
-            const arabicSurahName = surahNames[verseData.surah.number] || verseData.surah.name;
+          try {
+            // Try to fetch verse from API with timeout
+            const verseData = await Promise.race([
+              fetchVerseFromAPI(randomVerse.surah, randomVerse.verse),
+              new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+            ]);
             
-            newPositions.push({
-              id: i + 1,
-              partNumber: partNumber,
-              surahNumber: verseData.surah.number,
-              surahName: arabicSurahName,
-              verseNumber: verseData.number,
-              position: `الآية ${verseData.number} من سورة ${arabicSurahName}`,
-              description: `من قوله تعالى: ${shortText}`,
-              fullText: verseText
-            });
-          } else {
-            // Fallback if API fails
+            if (verseData) {
+              const verseText = verseData.text;
+              const shortText = verseText.length > 50 ? verseText.substring(0, 50) + "..." : verseText;
+              const arabicSurahName = surahNames[verseData.surah.number] || verseData.surah.name;
+              
+              newPositions.push({
+                id: i + 1,
+                partNumber: partNumber,
+                surahNumber: verseData.surah.number,
+                surahName: arabicSurahName,
+                verseNumber: verseData.number,
+                position: `الآية ${verseData.number} من سورة ${arabicSurahName}`,
+                description: `من قوله تعالى: ${shortText}`,
+                fullText: verseText
+              });
+            } else {
+              throw new Error('No verse data');
+            }
+          } catch (apiError) {
+            // Fallback for this specific position if API fails
             const arabicSurahName = surahNames[randomVerse.surah] || `السورة ${randomVerse.surah}`;
             newPositions.push({
               id: i + 1,
@@ -222,13 +243,41 @@ const RecitationTest = () => {
               fullText: `موضع للسرد من الجزء ${partNumber}`
             });
           }
+        } else {
+          // Fallback if verse generation fails
+          const randomPartIndex = Math.floor(Math.random() * selectedParts.length);
+          const fallbackPart = selectedParts[randomPartIndex];
+          newPositions.push({
+            id: i + 1,
+            partNumber: fallbackPart,
+            surahNumber: 2,
+            surahName: "البقرة",
+            verseNumber: 1,
+            position: `موضع عشوائي من الجزء ${fallbackPart}`,
+            description: `موضع للسرد من الجزء ${fallbackPart}`
+          });
         }
+      }
+      
+      // Ensure we always have exactly 4 positions
+      while (newPositions.length < 4) {
+        const randomPartIndex = Math.floor(Math.random() * selectedParts.length);
+        const partNumber = selectedParts[randomPartIndex];
+        newPositions.push({
+          id: newPositions.length + 1,
+          partNumber: partNumber,
+          surahNumber: 2,
+          surahName: "البقرة",
+          verseNumber: 1,
+          position: `موضع عشوائي من الجزء ${partNumber}`,
+          description: `موضع للسرد من الجزء ${partNumber}`
+        });
       }
       
       setPositions(newPositions);
     } catch (error) {
       console.error('Error generating positions:', error);
-      // Fallback to simple positions if everything fails
+      // Ultimate fallback - always create 4 positions
       const fallbackPositions: RecitationPosition[] = [];
       for (let i = 0; i < 4; i++) {
         const randomPartIndex = Math.floor(Math.random() * selectedParts.length);
@@ -345,8 +394,8 @@ const RecitationTest = () => {
                   <>
                     {positions.map((position) => (
                       <div 
-                        key={position.id} 
-                        className="glass-effect rounded-xl p-4 border border-border/50 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        key={`position-${position.id}`} 
+                        className="glass-effect rounded-xl p-4 border border-border/50 shadow-md hover:shadow-lg cursor-pointer"
                         onClick={() => {
                           setSelectedPosition(position);
                           setShowModal(true);
