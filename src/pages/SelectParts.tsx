@@ -6,6 +6,8 @@ const SelectParts = () => {
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
   const [showRandomModal, setShowRandomModal] = useState(false);
   const [randomCount, setRandomCount] = useState("");
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animatingParts, setAnimatingParts] = useState<number[]>([]);
 
   const quranParts = Array.from({ length: 30 }, (_, i) => i + 1);
 
@@ -17,17 +19,57 @@ const SelectParts = () => {
     );
   };
 
-  const handleRandomSelection = () => {
+  const handleRandomSelection = async () => {
     const count = parseInt(randomCount);
     if (count > 0 && count <= 30) {
-      // Randomly select parts from all available parts (1-30)
-      const shuffled = [...quranParts].sort(() => Math.random() - 0.5);
-      const randomlySelected = shuffled.slice(0, count);
-
-      // Replace existing selection with new random selection
-      setSelectedParts(randomlySelected.sort((a, b) => a - b));
+      // Close modal first
       setShowRandomModal(false);
       setRandomCount("");
+
+      // Clear current selection
+      setSelectedParts([]);
+
+      // Start animation
+      setIsAnimating(true);
+
+      // Randomly select final parts
+      const shuffled = [...quranParts].sort(() => Math.random() - 0.5);
+      const finalSelection = shuffled.slice(0, count);
+
+      // Animation sequence: show random parts flashing for 3.5 seconds
+      const animationDuration = 3500; // 3.5 seconds
+      const intervalTime = 250; // Change every 250ms (slower)
+      const totalSteps = animationDuration / intervalTime;
+
+      let step = 0;
+      let currentInterval = intervalTime;
+
+      const runAnimationStep = () => {
+        // Show random parts during animation
+        const randomAnimationParts = [...quranParts]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, count);
+        setAnimatingParts(randomAnimationParts);
+
+        step++;
+
+        // Gradually slow down the animation (like a slot machine)
+        if (step > totalSteps * 0.6) { // After 60% of animation
+          currentInterval = currentInterval * 1.15; // Slow down by 15% each step
+        }
+
+        if (step >= totalSteps) {
+          // End animation and show final selection
+          setIsAnimating(false);
+          setAnimatingParts([]);
+          setSelectedParts(finalSelection.sort((a, b) => a - b));
+        } else {
+          setTimeout(runAnimationStep, currentInterval);
+        }
+      };
+
+      // Start the animation
+      runAnimationStep();
     }
   };
 
@@ -67,13 +109,20 @@ const SelectParts = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowRandomModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all duration-300"
+                disabled={isAnimating}
+                className={`
+                  inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300
+                  ${isAnimating
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }
+                `}
               >
-                <Shuffle className="h-4 w-4" />
-                <span>اختيار عشوائي</span>
+                <Shuffle className={`h-4 w-4 ${isAnimating ? 'animate-spin' : ''}`} />
+                <span>{isAnimating ? 'جاري الاختيار...' : 'اختيار عشوائي'}</span>
               </button>
 
-              {selectedParts.length > 0 && (
+              {selectedParts.length > 0 && !isAnimating && (
                 <button
                   onClick={clearSelection}
                   className="px-4 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-all duration-300"
@@ -82,27 +131,44 @@ const SelectParts = () => {
                 </button>
               )}
             </div>
+
+            {isAnimating && (
+              <div className="mt-4 text-center">
+                <p className="text-blue-600 font-medium animate-pulse">
+                  🎲 جاري اختيار الأجزاء عشوائياً...
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Parts Grid */}
           <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-3 mb-8">
-            {quranParts.map((partNumber) => (
-              <button
-                key={partNumber}
-                onClick={() => togglePart(partNumber)}
-                className={`
-                  aspect-square rounded-xl border-2 transition-all duration-300 hover:scale-105
-                  flex flex-col items-center justify-center p-2
-                  ${selectedParts.includes(partNumber)
-                    ? 'bg-yellow-500 border-yellow-600 text-black'
-                    : 'bg-card border-border hover:border-gold text-foreground'
-                  }
-                `}
-              >
-                <Book className="h-4 w-4 mb-1" />
-                <span className="text-sm font-medium">{partNumber}</span>
-              </button>
-            ))}
+            {quranParts.map((partNumber) => {
+              const isSelected = selectedParts.includes(partNumber);
+              const isAnimating = animatingParts.includes(partNumber);
+
+              return (
+                <button
+                  key={partNumber}
+                  onClick={() => !isAnimating && togglePart(partNumber)}
+                  disabled={isAnimating}
+                  className={`
+                    aspect-square rounded-xl border-2 transition-all duration-500 ease-in-out
+                    flex flex-col items-center justify-center p-2
+                    ${isSelected
+                      ? 'bg-yellow-500 border-yellow-600 text-black'
+                      : isAnimating
+                        ? 'bg-gradient-to-br from-blue-400 to-blue-500 border-blue-400 text-white shadow-lg transform scale-110'
+                        : 'bg-card border-border hover:border-gold text-foreground hover:scale-105'
+                    }
+                    ${isAnimating ? 'cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  <Book className="h-4 w-4 mb-1" />
+                  <span className="text-sm font-medium">{partNumber}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Selected Parts Summary */}
